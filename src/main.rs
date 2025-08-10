@@ -49,6 +49,7 @@ async fn main() -> anyhow::Result<()> {
             Method::GET,
             Method::POST,
             Method::DELETE,
+            Method::OPTIONS,
         ])
         .allow_headers(Any);
 
