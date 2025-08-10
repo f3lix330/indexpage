@@ -54,8 +54,8 @@ async fn main() -> anyhow::Result<()> {
         .allow_headers(Any);
 
     let app = Router::new()
-        .route("/services", get(get_services).post(create_service))
-        .route("/services/{name}", delete(delete_service))
+        .route("/services", get(get_services).post(create_service).options(|| async { "" }))
+        .route("/services/{name}", delete(delete_service).options(|| async { "" }))
         .layer(cors)
         .with_state(pool);
 
