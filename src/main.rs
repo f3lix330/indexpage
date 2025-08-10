@@ -4,7 +4,8 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 use dotenvy::dotenv;
 use std::env;
 use anyhow::Result;
-use http::{Method};
+use axum::response::IntoResponse;
+use http::{Method, StatusCode};
 use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
@@ -54,8 +55,8 @@ async fn main() -> anyhow::Result<()> {
         .allow_headers(Any);
 
     let app = Router::new()
-        .route("/services", get(get_services).post(create_service).options(|| async { "" }))
-        .route("/services/{name}", delete(delete_service).options(|| async { "" }))
+        .route("/services", get(get_services).post(create_service).options(ok_handler))
+        .route("/services/{name}", delete(delete_service).options(ok_handler))
         .layer(cors)
         .with_state(pool);
 
@@ -63,6 +64,10 @@ async fn main() -> anyhow::Result<()> {
     axum::serve(listener, app).await?;
 
     Ok(())
+}
+
+async fn ok_handler() -> impl IntoResponse {
+    StatusCode::OK
 }
 
 // GET /services
