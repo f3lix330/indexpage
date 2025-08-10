@@ -8,6 +8,8 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 use dotenvy::dotenv;
 use std::env;
 use anyhow::Result;
+use tower_http::cors::{CorsLayer, Any};
+use tower::ServiceBuilder;
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 struct Service {
@@ -45,10 +47,17 @@ async fn main() -> anyhow::Result<()> {
     .execute(&pool)
     .await?;
 
+    let cors = CorsLayer::new()
+        // Erlaubt nur deine Frontend-Origin
+        .allow_origin("http://nas.internal:80".parse::<http::Uri>().unwrap())
+        allow_methods([Method::GET, Method::POST, Method::DELETE])
+        .allow_headers(tower_http::cors::Any);
+
     let app = Router::new()
         .route("/services", get(get_services).post(create_service))
         .route("/services/:name", delete(delete_service))
-        .with_state(pool);
+        .with_state(pool)
+        .layer(cors);;
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
