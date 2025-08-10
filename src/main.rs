@@ -1,15 +1,11 @@
-use axum::{
-    extract::{Path, State},
-    routing::{get, delete},
-    Json, Router,
-};
+use axum::{extract::{Path, State}, routing::{get, delete}, Json, Router};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use dotenvy::dotenv;
 use std::env;
 use anyhow::Result;
-use tower_http::cors::{CorsLayer, Any};
-use tower::ServiceBuilder;
+use http::{Method};
+use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 struct Service {
@@ -48,19 +44,22 @@ async fn main() -> anyhow::Result<()> {
     .await?;
 
     let cors = CorsLayer::new()
-        // Erlaubt nur deine Frontend-Origin
-        .allow_origin("http://nas.internal:80".parse::<http::Uri>().unwrap())
-        allow_methods([Method::GET, Method::POST, Method::DELETE])
-        .allow_headers(tower_http::cors::Any);
+        .allow_origin(Any)
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::DELETE,
+        ])
+        .allow_headers(Any);
 
     let app = Router::new()
         .route("/services", get(get_services).post(create_service))
         .route("/services/:name", delete(delete_service))
-        .with_state(pool)
-        .layer(cors);;
+        .layer(cors)
+        .with_state(pool);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
