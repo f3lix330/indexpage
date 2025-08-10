@@ -54,7 +54,7 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/services", get(get_services).post(create_service))
-        .route("/services/:name", delete(delete_service))
+        .route("/services/{name}", delete(delete_service))
         .layer(cors)
         .with_state(pool);
 
